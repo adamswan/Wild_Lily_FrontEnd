@@ -1,5 +1,18 @@
 "use strict";
 const electron = require("electron");
+const showVideo = () => {
+  const video = document.getElementById("screen-video");
+  navigator.mediaDevices.getDisplayMedia({
+    audio: false,
+    video: {
+      width: { max: window.screen.width },
+      height: { max: window.screen.height }
+    }
+  }).then((stream) => {
+    video.srcObject = stream;
+    video.onloadedmetadata = (e) => video.play();
+  }).catch((e) => console.log(e));
+};
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {
     const [channel, listener] = args;
@@ -40,3 +53,8 @@ const myAPI = {
   }
 };
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
+if (document.getElementById("screen-video")) {
+  showVideo();
+} else {
+  console.log("video不存在");
+}

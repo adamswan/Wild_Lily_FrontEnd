@@ -1,4 +1,5 @@
 import { ipcRenderer, contextBridge } from 'electron'
+import { showVideo } from './peer-control'
 
 // --------- Expose some API to the Renderer process ---------
 // 在这里向 window 上添加自定义的属性、方法
@@ -48,3 +49,9 @@ const myAPI = {
 }
 
 contextBridge.exposeInMainWorld('myAPI', myAPI)
+
+if (document.getElementById('screen-video')) {
+  showVideo()
+} else {
+  console.log('video不存在')
+}

@@ -36,7 +36,6 @@ const setRemoteCode = () => {
 const localCode = ref<number>(88888)
 const setLocalCode = async (code: Promise<any>) => {
     let res = await code
-    console.log('code登录', res)
     localCode.value = res
 }
 
@@ -53,7 +52,6 @@ const isShow = computed(() => {
 })
 
 const checkRemoteCode = (rule: any, value: any, callback: any) => {
-    console.log('value', value.toString().length)
     if (!value) {
         return callback(new Error('不能为空'))
     }
@@ -95,17 +93,16 @@ const login = async () => {
     setLocalCode(code)
 }
 
-// 监听主进程发的消息
+// 监听主进程发的控制消息
 (window as any).myAPI.controlStateChange()
     .then((obj: ControlInfo) => {
-        console.log('obj', obj)
         const { type, name } = obj
         if (type === 1) { // 在控制别人
             setControlText(`正在远程控制${name}`)
         } else if (type === 2) { // 被别人控制中
             setControlText(`${name}被远程控制中...`)
         }
-    })
+    })  
 
 onMounted(() => {
     login()

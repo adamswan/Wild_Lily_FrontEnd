@@ -1,8 +1,8 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, desktopCapturer, session } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-
+import { getDeskRealTimeVideoStream } from './getRealTime.ts'
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -24,12 +24,15 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
+// 初始窗口
 let win: BrowserWindow | null
+// 用于 webRTC 的新窗口
+let newWin: BrowserWindow
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1200,
-    height: 1000,
+    width: 400,
+    height: 400,
     autoHideMenuBar: true,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
@@ -42,7 +45,6 @@ function createWindow() {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
 
-
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
     win.webContents.openDevTools() //自动打开控制台
@@ -52,11 +54,10 @@ function createWindow() {
   }
 }
 
-// 用于 webRTC 的新窗口
 function createNEWWindow() {
-  const newWin = new BrowserWindow({
-    width: 1200,
-    height: 900,
+  newWin = new BrowserWindow({
+    width: 800,
+    height: 600,
     autoHideMenuBar: true,
     x: 0,
     y: 0,
@@ -67,8 +68,6 @@ function createNEWWindow() {
       // contextIsolation: false, 
     }
   })
-
-  return newWin
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -91,7 +90,8 @@ app.on('activate', () => {
 
 app.whenReady().then(createWindow)
 
-// 处理登录
+
+// 1、处理登录
 handleLogin()
 function handleLogin() {
   ipcMain.handle('login', () => {
@@ -100,25 +100,35 @@ function handleLogin() {
   })
 }
 
-// 控制成功后，告知渲染进程
-function controlSuccess(type: number, name: number) {
-  // 通知渲染进程控制成功了
-  win?.webContents.send('controlStateChange', { type, name })
-  // 新建窗口
-  const newWin = createNEWWindow()
-  if (newWin) {  
-    //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
-    newWin.loadURL('http://localhost:5173/new-win-controled.html'); 
-
-    newWin.webContents.openDevTools(); // 自动打开F12  
-  } 
-}
-
-// 监听渲染进程
+// 2、监听渲染进程
 linstenFromRednerer()
 function linstenFromRednerer() {
   ipcMain.on('control', (event, code) => {
     console.log('start-controling:', code)
     controlSuccess(1, code)
   })
+}
+
+// 3、控制成功后，告知渲染进程
+function controlSuccess(type: number, name: number) {
+  // 通知渲染进程控制成功了
+  win?.webContents.send('controlStateChange', { type, name })
+  // 新建窗口
+  createNEWWindow()
+  if (newWin) {
+    // 捕获傀儡端的实时视频流
+    getDeskRealTimeVideoStream(desktopCapturer, session)
+
+    //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
+    newWin.loadURL('http://localhost:5173/new-win-controled.html');
+
+    newWin.webContents.openDevTools(); // 自动打开F12  
+
+    // 监听窗口关闭事件  
+    newWin.on('close', () => {
+      // 初始窗口也一并关闭
+      win?.close()
+      app.quit()
+    });
+  }
 }
