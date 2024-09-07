@@ -7,6 +7,3 @@
 <script setup lang="ts">
 import ControlPage from './views/controlPage.vue'
 </script>
-
-<style scoped lang="less">
-</style>

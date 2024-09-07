@@ -20,8 +20,8 @@ let win;
 let newWin;
 function createWindow() {
   win = new BrowserWindow({
-    width: 400,
-    height: 400,
+    width: 410,
+    height: 530,
     autoHideMenuBar: true,
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {

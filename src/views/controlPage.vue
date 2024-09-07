@@ -1,5 +1,6 @@
 <template>
     <div class="container">
+        <img :src="lily" class="lily"></img>
         <h3 v-show="isShow">你的控制码: {{ localCode }}</h3>
         <h3 v-show="controlText.length !== 0">当前状态: {{ controlText }}</h3>
         <el-divider v-show="isShow" />
@@ -21,6 +22,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ControlInfo, RuleForm } from '../Types/controlPage';
+import lily from '../assets/lily.jpg?url'
 
 const ruleFormRef = ref<FormInstance>()
 
@@ -111,17 +113,23 @@ onMounted(() => {
 
 <style scoped lang="less">
 .container {
-    padding-top: 100px;
+    overflow: hidden;
+    height: 100%;
+    padding-top: 30px;
     display: flex;
     justify-content: center;
     flex-direction: column;
     align-items: center;
-
+    background-color: rgba(244, 244, 244);
     .btn-to-right {
         :deep(.el-form-item__content) {
             justify-content: end;
         }
 
+    }
+    .lily {
+        width: 200px;
+        height: 200px;
     }
 }
 </style>
