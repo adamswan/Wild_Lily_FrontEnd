@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -41,7 +41,7 @@ function createWindow() {
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', (new Date).toLocaleString())
   })
-  
+
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
@@ -50,6 +50,25 @@ function createWindow() {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
+}
+
+// 用于 webRTC 的新窗口
+function createNEWWindow() {
+  const newWin = new BrowserWindow({
+    width: 1200,
+    height: 900,
+    autoHideMenuBar: true,
+    x: 0,
+    y: 0,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.mjs'),
+      nodeIntegration: true,
+      webSecurity: false,
+      // contextIsolation: false, 
+    }
+  })
+
+  return newWin
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -71,3 +90,35 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(createWindow)
+
+// 处理登录
+handleLogin()
+function handleLogin() {
+  ipcMain.handle('login', () => {
+    // 先返回一个假数据
+    return 456789
+  })
+}
+
+// 控制成功后，告知渲染进程
+function controlSuccess(type: number, name: number) {
+  // 通知渲染进程控制成功了
+  win?.webContents.send('controlStateChange', { type, name })
+  // 新建窗口
+  const newWin = createNEWWindow()
+  if (newWin) {  
+    //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
+    newWin.loadURL('http://localhost:5173/new-win-controled.html'); 
+
+    newWin.webContents.openDevTools(); // 自动打开F12  
+  } 
+}
+
+// 监听渲染进程
+linstenFromRednerer()
+function linstenFromRednerer() {
+  ipcMain.on('control', (event, code) => {
+    console.log('start-controling:', code)
+    controlSuccess(1, code)
+  })
+}

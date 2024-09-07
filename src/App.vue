@@ -1,14 +1,12 @@
 <template>
   <div>
-    <el-button type="primary">Primary</el-button>
+    <ControlPage></ControlPage>
   </div>
-
 </template>
 
 <script setup lang="ts">
-
+import ControlPage from './views/controlPage.vue'
 </script>
 
-<style scoped>
-
+<style scoped lang="less">
 </style>

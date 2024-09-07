@@ -22,4 +22,29 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 
   // You can expose other APTs you need here.
   // ...
+
 })
+
+const myAPI = {
+  // 登录
+  doLogin: async () => {
+    let res = await ipcRenderer.invoke('login')
+    return res
+  },
+
+  // 控制状态发生变化
+  controlStateChange: () => {
+    return new Promise((resolve) => {
+      ipcRenderer.on('controlStateChange', (event, data) => {
+        resolve(data)
+      })
+    })
+  },
+
+  // 渲染进程向主进程单向通信，告知主进程，控制开始
+  startControl: (code: any) => {
+    ipcRenderer.send('control', code)
+  }
+}
+
+contextBridge.exposeInMainWorld('myAPI', myAPI)
