@@ -1,5 +1,8 @@
+import { ipcRenderer } from 'electron'
+
+const video: HTMLVideoElement = document.getElementById('screen-video') as HTMLVideoElement
+
 export const showVideo = () => {
-    const video: HTMLVideoElement = document.getElementById('screen-video') as HTMLVideoElement
     navigator.mediaDevices.getDisplayMedia({
         audio: false,
         video: {
@@ -14,4 +17,35 @@ export const showVideo = () => {
             video.onloadedmetadata = (e) => video.play()
         })
         .catch(e => console.log(e))
+}
+
+// 监听键盘
+export const listenToKey = () => {
+    window.onkeydown = (e) => {
+        let data = {
+            keyCode: e.keyCode,
+            shift: e.shiftKey,
+            meta: e.metaKey,
+            control: e.ctrlKey,
+            alt: e.altKey
+        }
+        // 将data传出去
+        ipcRenderer.send('inputKeyboard', data)
+    }
+}
+
+// 监听鼠标
+export const listentoMouse = () => {
+    window.onmouseup = (e) => {
+        let data: any = {}
+        data.clientX = e.clientX
+        data.clientY = e.clientY
+        data.video = {
+            width: video.getBoundingClientRect().width,
+            height: video.getBoundingClientRect().height
+        }
+        // 将data传出去
+        ipcRenderer.send('inputMouse', data)
+    }
+
 }

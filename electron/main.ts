@@ -3,6 +3,9 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
+import {} from './robotToControlUser.ts'
+
+
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -47,7 +50,7 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
-    win.webContents.openDevTools() //自动打开控制台
+    // win.webContents.openDevTools() //自动打开控制台
   } else {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
@@ -68,6 +71,8 @@ function createNEWWindow() {
       // contextIsolation: false, 
     }
   })
+
+  console.log(888)
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -124,11 +129,30 @@ function controlSuccess(type: number, name: number) {
 
     newWin.webContents.openDevTools(); // 自动打开F12  
 
+    console.log('justTest--main')
+
     // 监听窗口关闭事件  
     newWin.on('close', () => {
       // 初始窗口也一并关闭
       win?.close()
       app.quit()
+      win = null
     });
   }
 }
+
+// 4. 监听键盘输入的数据
+function onInputKeyBoard() {
+  ipcMain.on('inputKeyboard', (e, data) => {
+    console.log('get-keyboard', data)
+  })
+}
+onInputKeyBoard()
+
+// 5. 监听鼠标点击事件
+function onInputMouse() {
+  ipcMain.on('inputMouse', (e, data) => {
+    console.log('get-Mouse', data)
+  })
+}
+onInputMouse()

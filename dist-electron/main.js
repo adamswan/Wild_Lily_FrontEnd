@@ -33,7 +33,6 @@ function createWindow() {
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools();
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
@@ -52,6 +51,7 @@ function createNEWWindow() {
       // contextIsolation: false, 
     }
   });
+  console.log(888);
 }
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -86,12 +86,26 @@ function controlSuccess(type, name) {
     //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
     newWin.loadURL("http://localhost:5173/new-win-controled.html");
     newWin.webContents.openDevTools();
+    console.log("justTest--main");
     newWin.on("close", () => {
       win == null ? void 0 : win.close();
       app.quit();
+      win = null;
     });
   }
 }
+function onInputKeyBoard() {
+  ipcMain.on("inputKeyboard", (e, data) => {
+    console.log("get-keyboard", data);
+  });
+}
+onInputKeyBoard();
+function onInputMouse() {
+  ipcMain.on("inputMouse", (e, data) => {
+    console.log("get-Mouse", data);
+  });
+}
+onInputMouse();
 export {
   MAIN_DIST,
   RENDERER_DIST,

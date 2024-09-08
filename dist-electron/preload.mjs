@@ -1,7 +1,7 @@
 "use strict";
 const electron = require("electron");
+const video = document.getElementById("screen-video");
 const showVideo = () => {
-  const video = document.getElementById("screen-video");
   navigator.mediaDevices.getDisplayMedia({
     audio: false,
     video: {
@@ -12,6 +12,30 @@ const showVideo = () => {
     video.srcObject = stream;
     video.onloadedmetadata = (e) => video.play();
   }).catch((e) => console.log(e));
+};
+const listenToKey = () => {
+  window.onkeydown = (e) => {
+    let data = {
+      keyCode: e.keyCode,
+      shift: e.shiftKey,
+      meta: e.metaKey,
+      control: e.ctrlKey,
+      alt: e.altKey
+    };
+    electron.ipcRenderer.send("inputKeyboard", data);
+  };
+};
+const listentoMouse = () => {
+  window.onmouseup = (e) => {
+    let data = {};
+    data.clientX = e.clientX;
+    data.clientY = e.clientY;
+    data.video = {
+      width: video.getBoundingClientRect().width,
+      height: video.getBoundingClientRect().height
+    };
+    electron.ipcRenderer.send("inputMouse", data);
+  };
 };
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {
@@ -55,6 +79,8 @@ const myAPI = {
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
 if (document.getElementById("screen-video")) {
   showVideo();
+  listenToKey();
+  listentoMouse();
 } else {
   console.log("video不存在");
 }
