@@ -14,7 +14,7 @@ const showVideo = () => {
   }).catch((e) => console.log(e));
 };
 const listenToKey = () => {
-  window.onkeydown = (e) => {
+  window.addEventListener("keydown", (e) => {
     let data = {
       keyCode: e.keyCode,
       shift: e.shiftKey,
@@ -22,20 +22,25 @@ const listenToKey = () => {
       control: e.ctrlKey,
       alt: e.altKey
     };
-    electron.ipcRenderer.send("inputKeyboard", data);
-  };
+    console.log("data", data);
+    electron.ipcRenderer.send("inputKeyboardToNet", data);
+  });
 };
 const listentoMouse = () => {
-  window.onmouseup = (e) => {
+  window.addEventListener("mouseup", (e) => {
     let data = {};
     data.clientX = e.clientX;
     data.clientY = e.clientY;
     data.video = {
+      // 获取视频区域的真实宽高
       width: video.getBoundingClientRect().width,
       height: video.getBoundingClientRect().height
     };
-    electron.ipcRenderer.send("inputMouse", data);
-  };
+    electron.ipcRenderer.send("inputMouseToNet", {
+      windowWidth: window.screen.width,
+      windowHeight: window.screen.height
+    }, data);
+  });
 };
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {

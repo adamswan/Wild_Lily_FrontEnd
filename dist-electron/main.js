@@ -11,16 +11,48 @@ const getDeskRealTimeVideoStream = (desktopCapturer2, session2) => {
 };
 const require2 = createRequire(import.meta.url);
 const robot = require2("robotjs");
-const handleMouse = () => {
-  console.log("robot9999", robot);
+const vkey = require2("vkey");
+const handleMouse = (data) => {
+  let { clientX, clientY, screen, video } = data;
+  let x = clientX * screen.width / video.width;
+  let y = clientY * screen.height / video.height;
+  robot.moveMouse(x, y);
+  robot.mouseClick();
 };
-ipcMain.on("robot", (e, type, data) => {
-  if (type === "keyboard") {
-    console.log("keyboard", type, data);
-  } else if (type === "mouse") {
-    console.log("mouse", type, data);
+const handleKey = (data) => {
+  console.log(333);
+  const modifiers = [];
+  if (data.meta) {
+    modifiers.push("meta");
   }
-});
+  if (data.shift) {
+    modifiers.push("shift");
+  }
+  if (data.alt) {
+    modifiers.push("alt");
+  }
+  if (data.ctrl) {
+    modifiers.push("ctrl");
+  }
+  let key = vkey[data.keyCode].toLowerCase();
+  console.log("print key", key);
+  if (key[0] !== "<") {
+    robot.keyTap(key, modifiers);
+  }
+};
+const handleNet = () => {
+  ipcMain.on("inputKeyboardToNet", (e, data) => {
+    console.log(2222);
+    handleKey(data);
+  });
+  ipcMain.on("inputMouseToNet", (e, obj, data) => {
+    data.screen = {
+      width: obj.windowWidth,
+      height: obj.windowHeight
+    };
+    handleMouse(data);
+  });
+};
 createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
@@ -59,8 +91,8 @@ function createNEWWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       nodeIntegration: true,
-      webSecurity: false,
-      contextIsolation: false
+      webSecurity: false
+      // contextIsolation: false,
     }
   });
 }
@@ -97,7 +129,7 @@ function controlSuccess(type, name) {
     //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
     newWin.loadURL("http://localhost:5173/new-win-controled.html");
     newWin.webContents.openDevTools();
-    console.log("justTest--main");
+    handleNet();
     newWin.on("close", () => {
       win == null ? void 0 : win.close();
       app.quit();
@@ -105,19 +137,6 @@ function controlSuccess(type, name) {
     });
   }
 }
-function onInputKeyBoard() {
-  ipcMain.on("inputKeyboard", (e, data) => {
-    console.log("get-keyboard", data);
-  });
-}
-onInputKeyBoard();
-function onInputMouse() {
-  ipcMain.on("inputMouse", (e, data) => {
-    console.log("get-Mouse", data);
-  });
-}
-onInputMouse();
-handleMouse();
 export {
   MAIN_DIST,
   RENDERER_DIST,

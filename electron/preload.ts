@@ -51,9 +51,9 @@ const myAPI = {
 contextBridge.exposeInMainWorld('myAPI', myAPI)
 
 if (document.getElementById('screen-video')) {
-  showVideo()
-  listenToKey()
-  listentoMouse()
+  showVideo() // 显示傀儡端实时视频流
+  listenToKey() // 监听控制端键盘
+  listentoMouse()// 监听控制端鼠标
 } else {
   console.log('video不存在')
 }

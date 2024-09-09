@@ -3,16 +3,11 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
-import { handleMouse } from './robotToControlUser.ts'
+import { listenOprateAndToControl, handleNet } from './robotToControlUser.ts'
 
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-// const robot = require('robotjs')
-// console.log('robot', robot)
-
-
 
 // The built directory structure
 //
@@ -73,7 +68,7 @@ function createNEWWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: true,
       webSecurity: false,
-      contextIsolation: false,
+      // contextIsolation: false,
     }
   })
 }
@@ -132,7 +127,9 @@ function controlSuccess(type: number, name: number) {
 
     newWin.webContents.openDevTools(); // 自动打开F12  
 
-    console.log('justTest--main')
+    // 监听控制端的键鼠, 进而触发傀儡端的键鼠操作
+    // listenOprateAndToControl()
+    handleNet()
 
     // 监听窗口关闭事件  
     newWin.on('close', () => {
@@ -143,21 +140,3 @@ function controlSuccess(type: number, name: number) {
     });
   }
 }
-
-// 4. 监听键盘输入的数据
-function onInputKeyBoard() {
-  ipcMain.on('inputKeyboard', (e, data) => {
-    console.log('get-keyboard', data)
-  })
-}
-onInputKeyBoard()
-
-// 5. 监听鼠标点击事件
-function onInputMouse() {
-  ipcMain.on('inputMouse', (e, data) => {
-    console.log('get-Mouse', data)
-  })
-}
-onInputMouse()
-
-handleMouse()
