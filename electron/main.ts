@@ -12,14 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const robot = require('robotjs')
 console.log('robot', robot)
-const { mouse, left, right, up, down } = require('@nut-tree/nut-js')
-async function doit() {
-  await mouse.move(right(500));
-  await mouse.move(down(500));
-  await mouse.move(left(500));
-  await mouse.move(up(500));
-}
-doit()
+
 
 
 // The built directory structure
