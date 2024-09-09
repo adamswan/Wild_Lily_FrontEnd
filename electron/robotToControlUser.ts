@@ -61,16 +61,19 @@ export const listenOprateAndToControl = () => {
 }
 
 export const handleNet = () => {
-    ipcMain.on('inputKeyboardToNet', (e, data) => {
-        console.log(2222)
-        handleKey(data)
-    })
+    // 暂时注释
+    // ipcMain.on('inputKeyboardToNet', (e, data) => {
+    //     console.log(2222)
+    //     handleKey(data)
+    // })
 
-    ipcMain.on('inputMouseToNet', (e, obj, data) => {
-        data.screen = {
-            width: obj.windowWidth,
-            height: obj.windowHeight
-        }
-        handleMouse(data)
-    })
+    // ipcMain.on('inputMouseToNet', (e, obj, data) => {
+    //     data.screen = {
+    //         width: obj.windowWidth,
+    //         height: obj.windowHeight
+    //     }
+    //     handleMouse(data)
+    // })
 }
+
+

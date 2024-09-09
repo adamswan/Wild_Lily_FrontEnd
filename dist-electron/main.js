@@ -1,4 +1,4 @@
-import { ipcMain, app, BrowserWindow, session, desktopCapturer } from "electron";
+import { app, BrowserWindow, ipcMain, session, desktopCapturer } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -7,50 +7,6 @@ const getDeskRealTimeVideoStream = (desktopCapturer2, session2) => {
     desktopCapturer2.getSources({ types: ["screen"] }).then((sources) => {
       callback({ video: sources[0], audio: "loopback" });
     });
-  });
-};
-const require2 = createRequire(import.meta.url);
-const robot = require2("robotjs");
-const vkey = require2("vkey");
-const handleMouse = (data) => {
-  let { clientX, clientY, screen, video } = data;
-  let x = clientX * screen.width / video.width;
-  let y = clientY * screen.height / video.height;
-  robot.moveMouse(x, y);
-  robot.mouseClick();
-};
-const handleKey = (data) => {
-  console.log(333);
-  const modifiers = [];
-  if (data.meta) {
-    modifiers.push("meta");
-  }
-  if (data.shift) {
-    modifiers.push("shift");
-  }
-  if (data.alt) {
-    modifiers.push("alt");
-  }
-  if (data.ctrl) {
-    modifiers.push("ctrl");
-  }
-  let key = vkey[data.keyCode].toLowerCase();
-  console.log("print key", key);
-  if (key[0] !== "<") {
-    robot.keyTap(key, modifiers);
-  }
-};
-const handleNet = () => {
-  ipcMain.on("inputKeyboardToNet", (e, data) => {
-    console.log(2222);
-    handleKey(data);
-  });
-  ipcMain.on("inputMouseToNet", (e, obj, data) => {
-    data.screen = {
-      width: obj.windowWidth,
-      height: obj.windowHeight
-    };
-    handleMouse(data);
   });
 };
 createRequire(import.meta.url);
@@ -77,6 +33,7 @@ function createWindow() {
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
+    win.webContents.openDevTools();
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
@@ -117,11 +74,10 @@ function handleLogin() {
 linstenFromRednerer();
 function linstenFromRednerer() {
   ipcMain.on("control", (event, code) => {
-    console.log("start-controling:", code);
     controlSuccess(1, code);
   });
 }
-function controlSuccess(type, name) {
+async function controlSuccess(type, name) {
   win == null ? void 0 : win.webContents.send("controlStateChange", { type, name });
   createNEWWindow();
   if (newWin) {
@@ -129,7 +85,6 @@ function controlSuccess(type, name) {
     //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
     newWin.loadURL("http://localhost:5173/new-win-controled.html");
     newWin.webContents.openDevTools();
-    handleNet();
     newWin.on("close", () => {
       win == null ? void 0 : win.close();
       app.quit();

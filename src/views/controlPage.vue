@@ -72,7 +72,7 @@ const rules = reactive<FormRules<RuleForm>>({
 
 // 开始控制
 const startControl = (code: any) => {
-    // 渲染进程向主进程单向通信
+    // 触发预加载脚本的自定义函数
     (window as any).myAPI.startControl(code)
 }
 

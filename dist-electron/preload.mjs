@@ -2,17 +2,47 @@
 const electron = require("electron");
 const video = document.getElementById("screen-video");
 const showVideo = () => {
-  navigator.mediaDevices.getDisplayMedia({
-    audio: false,
-    video: {
-      width: { max: window.screen.width },
-      height: { max: window.screen.height }
-    }
-  }).then((stream) => {
-    video.srcObject = stream;
-    video.onloadedmetadata = (e) => video.play();
-  }).catch((e) => console.log(e));
+  return new Promise((resolve) => {
+    navigator.mediaDevices.getDisplayMedia({
+      audio: false,
+      video: {
+        width: { max: window.screen.width },
+        height: { max: window.screen.height }
+      }
+    }).then((stream) => {
+      resolve(stream);
+    }).catch((e) => console.log(e));
+  });
 };
+const pc = new window.RTCPeerConnection({});
+const createOffer = async () => {
+  const offer = await pc.createOffer({
+    offerToReceiveAudio: false,
+    offerToReceiveVideo: true
+  });
+  await pc.setLocalDescription(offer);
+  console.log("pc offer", JSON.stringify(offer));
+  return pc.localDescription;
+};
+createOffer();
+const setRemote = async (answer) => {
+  await pc.setRemoteDescription(answer);
+};
+window.setRemote = setRemote;
+pc.onaddstream = (e) => {
+  console.log("add-stream", e.stream);
+};
+const pc2 = new window.RTCPeerConnection({});
+async function createAnswer(offer) {
+  let screenStream = await showVideo();
+  console.log("screenStream", screenStream);
+  pc2.addStream(screenStream);
+  await pc2.setRemoteDescription(offer);
+  await pc2.setLocalDescription(await pc2.createAnswer());
+  console.log("answer", JSON.stringify(pc2.localDescription));
+  return pc2.localDescription;
+}
+window.createAnswer = createAnswer;
 const listenToKey = () => {
   window.addEventListener("keydown", (e) => {
     let data = {
@@ -79,11 +109,12 @@ const myAPI = {
   // 渲染进程向主进程单向通信，告知主进程，控制开始
   startControl: (code) => {
     electron.ipcRenderer.send("control", code);
-  }
+  },
+  createAnswer,
+  setRemote
 };
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
 if (document.getElementById("screen-video")) {
-  showVideo();
   listenToKey();
   listentoMouse();
 } else {

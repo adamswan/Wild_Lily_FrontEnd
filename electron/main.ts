@@ -50,7 +50,7 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
-    // win.webContents.openDevTools() //自动打开控制台
+    win.webContents.openDevTools() //自动打开控制台
   } else {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
@@ -103,17 +103,16 @@ function handleLogin() {
   })
 }
 
-// 2、监听渲染进程
+// 2、监听渲染进程的连接行为
 linstenFromRednerer()
 function linstenFromRednerer() {
   ipcMain.on('control', (event, code) => {
-    console.log('start-controling:', code)
     controlSuccess(1, code)
   })
 }
 
-// 3、控制成功后，告知渲染进程
-function controlSuccess(type: number, name: number) {
+// 3、
+async function controlSuccess(type: number, name: number) {
   // 通知渲染进程控制成功了
   win?.webContents.send('controlStateChange', { type, name })
   // 新建窗口
@@ -129,7 +128,7 @@ function controlSuccess(type: number, name: number) {
 
     // 监听控制端的键鼠, 进而触发傀儡端的键鼠操作
     // listenOprateAndToControl()
-    handleNet()
+    // handleNet()
 
     // 监听窗口关闭事件  
     newWin.on('close', () => {
