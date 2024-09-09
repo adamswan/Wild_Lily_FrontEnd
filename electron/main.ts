@@ -3,11 +3,24 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
-import {} from './robotToControlUser.ts'
+// import robot from 'robotjs'
+// import { handleMouse } from './robotToControlUser.ts'
 
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const robot = require('robotjs')
+console.log('robot', robot)
+const { mouse, left, right, up, down } = require('@nut-tree/nut-js')
+async function doit() {
+  await mouse.move(right(500));
+  await mouse.move(down(500));
+  await mouse.move(left(500));
+  await mouse.move(up(500));
+}
+doit()
+
 
 // The built directory structure
 //
@@ -68,11 +81,9 @@ function createNEWWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
       nodeIntegration: true,
       webSecurity: false,
-      // contextIsolation: false, 
+      contextIsolation: false,
     }
   })
-
-  console.log(888)
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -156,3 +167,13 @@ function onInputMouse() {
   })
 }
 onInputMouse()
+
+
+
+// setTimeout(() => {
+//   try {
+//     console.log('robot', robot)
+//   } catch (error) {
+//     console.log('----error', error)
+//   }
+// }, 3000)

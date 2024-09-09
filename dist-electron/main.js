@@ -9,8 +9,18 @@ const getDeskRealTimeVideoStream = (desktopCapturer2, session2) => {
     });
   });
 };
-createRequire(import.meta.url);
+const require2 = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const robot = require2("robotjs");
+console.log("robot", robot);
+const { mouse, left, right, up, down } = require2("@nut-tree/nut-js");
+async function doit() {
+  await mouse.move(right(500));
+  await mouse.move(down(500));
+  await mouse.move(left(500));
+  await mouse.move(up(500));
+}
+doit();
 process.env.APP_ROOT = path.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
@@ -47,11 +57,10 @@ function createNEWWindow() {
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
       nodeIntegration: true,
-      webSecurity: false
-      // contextIsolation: false, 
+      webSecurity: false,
+      contextIsolation: false
     }
   });
-  console.log(888);
 }
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
