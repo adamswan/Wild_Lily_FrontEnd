@@ -1,5 +1,5 @@
 import { ipcRenderer, contextBridge } from 'electron'
-import { showVideo, listenToKey, listentoMouse, createAnswer, setRemote } from './peer-control'
+import { listenToKey, listentoMouse, createAnswer, setRemote, addIceCandidateForControl, addIceCandidateForPupe } from './peer-control'
 
 // --------- Expose some API to the Renderer process ---------
 // 在这里向 window 上添加自定义的属性、方法
@@ -47,14 +47,15 @@ const myAPI = {
     ipcRenderer.send('control', code)
   },
 
-  createAnswer: createAnswer,
-  setRemote: setRemote
+  createAnswer,
+  setRemote,
+  addIceCandidateForControl,
+  addIceCandidateForPupe
 }
 
 contextBridge.exposeInMainWorld('myAPI', myAPI)
 
 if (document.getElementById('screen-video')) {
-  // showVideo() // 显示傀儡端实时视频流
   listenToKey() // 监听控制端键盘
   listentoMouse()// 监听控制端鼠标
 } else {

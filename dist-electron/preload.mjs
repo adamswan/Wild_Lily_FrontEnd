@@ -1,7 +1,7 @@
 "use strict";
 const electron = require("electron");
 const video = document.getElementById("screen-video");
-const showVideo = () => {
+const getVideoStream = () => {
   return new Promise((resolve) => {
     navigator.mediaDevices.getDisplayMedia({
       audio: false,
@@ -15,6 +15,22 @@ const showVideo = () => {
   });
 };
 const pc = new window.RTCPeerConnection({});
+//! webRTC NAT穿透：ICE, 交互式连接创建
+pc.onicecandidate = function(e) {
+  console.log("candidate", JSON.stringify(e.candidate));
+};
+let candidateForControl = [];
+async function addIceCandidateForControl(candidate) {
+  if (candidate) {
+    candidateForControl.push(candidate);
+  }
+  if (pc.remoteDescription && pc.remoteDescription.type) {
+    for (let i = 0; i < candidateForControl.length; i++) {
+      await pc.addIceCandidate(new RTCIceCandidate(candidateForControl[i]));
+    }
+    candidateForControl = [];
+  }
+}
 const createOffer = async () => {
   const offer = await pc.createOffer({
     offerToReceiveAudio: false,
@@ -25,17 +41,30 @@ const createOffer = async () => {
   return pc.localDescription;
 };
 createOffer();
-const setRemote = async (answer) => {
-  await pc.setRemoteDescription(answer);
-};
-window.setRemote = setRemote;
 pc.onaddstream = (e) => {
   console.log("add-stream", e.stream);
+  video.srcObject = e.stream;
+  video.onloadedmetadata = (e2) => video.play();
 };
 const pc2 = new window.RTCPeerConnection({});
+//! webRTC NAT穿透：ICE, 交互式连接创建
+pc2.onicecandidate = function(e) {
+  console.log("candidate2", JSON.stringify(e.candidate));
+};
+let candidateForPupe = [];
+async function addIceCandidateForPupe(candidate) {
+  if (candidate) {
+    candidateForPupe.push(candidate);
+  }
+  if (pc2.remoteDescription && pc2.remoteDescription.type) {
+    for (let i = 0; i < candidateForPupe.length; i++) {
+      await pc2.addIceCandidate(new RTCIceCandidate(candidateForPupe[i]));
+    }
+    candidateForPupe = [];
+  }
+}
 async function createAnswer(offer) {
-  let screenStream = await showVideo();
-  console.log("screenStream", screenStream);
+  let screenStream = await getVideoStream();
   pc2.addStream(screenStream);
   await pc2.setRemoteDescription(offer);
   await pc2.setLocalDescription(await pc2.createAnswer());
@@ -43,6 +72,10 @@ async function createAnswer(offer) {
   return pc2.localDescription;
 }
 window.createAnswer = createAnswer;
+const setRemote = async (answer) => {
+  await pc.setRemoteDescription(answer);
+};
+window.setRemote = setRemote;
 const listenToKey = () => {
   window.addEventListener("keydown", (e) => {
     let data = {
@@ -111,7 +144,9 @@ const myAPI = {
     electron.ipcRenderer.send("control", code);
   },
   createAnswer,
-  setRemote
+  setRemote,
+  addIceCandidateForControl,
+  addIceCandidateForPupe
 };
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
 if (document.getElementById("screen-video")) {
