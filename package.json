@@ -16,6 +16,7 @@
     "node-abi": "^3.67.0",
     "node-gyp": "^10.2.0",
     "robotjs": "^0.6.0",
+    "vkey": "^1.0.1",
     "vue": "^3.4.21"
   },
   "devDependencies": {

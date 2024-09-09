@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session, desktopCapturer } from "electron";
+import { ipcMain, app, BrowserWindow, session, desktopCapturer } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -10,17 +10,19 @@ const getDeskRealTimeVideoStream = (desktopCapturer2, session2) => {
   });
 };
 const require2 = createRequire(import.meta.url);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const robot = require2("robotjs");
-console.log("robot", robot);
-const { mouse, left, right, up, down } = require2("@nut-tree/nut-js");
-async function doit() {
-  await mouse.move(right(500));
-  await mouse.move(down(500));
-  await mouse.move(left(500));
-  await mouse.move(up(500));
-}
-doit();
+const handleMouse = () => {
+  console.log("robot9999", robot);
+};
+ipcMain.on("robot", (e, type, data) => {
+  if (type === "keyboard") {
+    console.log("keyboard", type, data);
+  } else if (type === "mouse") {
+    console.log("mouse", type, data);
+  }
+});
+createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
@@ -115,6 +117,7 @@ function onInputMouse() {
   });
 }
 onInputMouse();
+handleMouse();
 export {
   MAIN_DIST,
   RENDERER_DIST,

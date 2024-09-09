@@ -3,15 +3,14 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
-// import robot from 'robotjs'
-// import { handleMouse } from './robotToControlUser.ts'
+import { handleMouse } from './robotToControlUser.ts'
 
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const robot = require('robotjs')
-console.log('robot', robot)
+// const robot = require('robotjs')
+// console.log('robot', robot)
 
 
 
@@ -161,12 +160,4 @@ function onInputMouse() {
 }
 onInputMouse()
 
-
-
-// setTimeout(() => {
-//   try {
-//     console.log('robot', robot)
-//   } catch (error) {
-//     console.log('----error', error)
-//   }
-// }, 3000)
+handleMouse()

@@ -1,12 +1,15 @@
 import { ipcMain } from "electron"
-// import robot from 'robotjs'
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const robot = require('robotjs')
+
 
 // 响应控制端发送的键盘指令
-// console.log('robot', robot)
+
 
 // 响应控制端发送的鼠标指令
 export const handleMouse = () => {
-    // console.log('robot', robot)
+    console.log('robot9999', robot)
     // let { clientX, clientY, screen, video } = data
     // let x = clientX * screen.width / video.width
     // let y = clientY * screen.height / video.height
