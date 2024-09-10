@@ -11,13 +11,17 @@
   "dependencies": {
     "@electron/rebuild": "^3.6.0",
     "@esbuild/win32-x64": "^0.23.1",
+    "@types/ws": "^8.5.12",
+    "bufferutil": "^4.0.8",
     "element-plus": "^2.8.2",
     "mitt": "^3.0.1",
     "node-abi": "^3.67.0",
     "node-gyp": "^10.2.0",
     "robotjs": "^0.6.0",
+    "utf-8-validate": "^6.0.4",
     "vkey": "^1.0.1",
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",

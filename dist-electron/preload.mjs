@@ -146,7 +146,14 @@ const myAPI = {
   createAnswer,
   setRemote,
   addIceCandidateForControl,
-  addIceCandidateForPupe
+  addIceCandidateForPupe,
+  pupeIsControled: (event, remote) => {
+    return new Promise((resolve) => {
+      electron.ipcRenderer.on("pupeIsControled", (event2, remote2) => {
+        resolve(remote2);
+      });
+    });
+  }
 };
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
 if (document.getElementById("screen-video")) {

@@ -1,13 +1,13 @@
 <template>
     <div class="container">
         <img :src="lily" class="lily"></img>
-        <h3 v-show="isShow">你的控制码: {{ localCode }}</h3>
+        <h3 v-show="isShow">您的控制码: {{ localCode }}</h3>
         <h3 v-show="controlText.length !== 0">当前状态: {{ controlText }}</h3>
         <el-divider v-show="isShow" />
         <el-form v-show="isShow" ref="ruleFormRef" style="max-width: 600px" :model="ruleForm" :rules="rules"
             label-width="auto" class="demo-ruleForm" size="large" status-icon>
             <el-form-item label="控制码" prop="remoteCode">
-                <el-input v-model.number="ruleForm.remoteCode" />
+                <el-input v-model.number="ruleForm.remoteCode" placeholder="请输入对方控制码" />
             </el-form-item>
             <el-form-item class="btn-to-right">
                 <el-button type="primary" @click="submitForm(ruleFormRef)">
@@ -61,8 +61,8 @@ const checkRemoteCode = (rule: any, value: any, callback: any) => {
     if (Number.isInteger(value) === false) {
         callback(new Error('只能为数字'))
     }
-    if (value.toString().length !== 4) {
-        callback(new Error('长度只能4位'))
+    if (value.toString().length !== 6) {
+        callback(new Error('长度只能6位'))
     }
     callback()
 }
@@ -95,19 +95,26 @@ const login = async () => {
     setLocalCode(code)
 }
 
+const wiredFun = () => {
+    // 监听傀儡端被控制
+    (window as any).myAPI.pupeIsControled()
+        .then((remote: number) => {
+            console.log('.vue got remote code', remote)
+            setControlText(`被${remote}远程控制中...`)
+        })
+}
+
 // 监听主进程发的控制消息
-(window as any).myAPI.controlStateChange()
-    .then((obj: ControlInfo) => {
-        const { type, name } = obj
-        if (type === 1) { // 在控制别人
-            setControlText(`正在远程控制${name}`)
-        } else if (type === 2) { // 被别人控制中
-            setControlText(`${name}被远程控制中...`)
-        }
-    })  
+(window as any).myAPI.controlStateChange().then((obj: ControlInfo) => {
+    const { type, name } = obj
+    if (type === 1) { // 在控制别人
+        setControlText(`正在远程控制${name}`)
+    }
+})
 
 onMounted(() => {
     login()
+    wiredFun()
 })
 </script>
 
@@ -121,12 +128,14 @@ onMounted(() => {
     flex-direction: column;
     align-items: center;
     background-color: rgba(244, 244, 244);
+
     .btn-to-right {
         :deep(.el-form-item__content) {
             justify-content: end;
         }
 
     }
+
     .lily {
         width: 200px;
         height: 200px;

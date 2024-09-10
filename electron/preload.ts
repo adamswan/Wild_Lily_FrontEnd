@@ -50,7 +50,15 @@ const myAPI = {
   createAnswer,
   setRemote,
   addIceCandidateForControl,
-  addIceCandidateForPupe
+  addIceCandidateForPupe,
+
+  pupeIsControled: (event: any, remote: number) => {
+    return new Promise((resolve) => {
+      ipcRenderer.on('pupeIsControled', (event, remote) => {
+        resolve(remote)
+      })
+    })
+  }
 }
 
 contextBridge.exposeInMainWorld('myAPI', myAPI)

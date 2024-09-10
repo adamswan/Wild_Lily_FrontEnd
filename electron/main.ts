@@ -3,11 +3,13 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
-import { listenOprateAndToControl, handleNet } from './robotToControlUser.ts'
-
+// import { listenOprateAndToControl, handleNet } from './robotToControlUser.ts'
+import { autoLogin, sendDataToControl, listenToBeControl } from './websocket.ts'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+// const mitt  = require('./websocket.ts')
+// console.log('mitt', mitt)
 
 // The built directory structure
 //
@@ -97,21 +99,23 @@ app.whenReady().then(createWindow)
 // 1、处理登录
 handleLogin()
 function handleLogin() {
-  ipcMain.handle('login', () => {
+  ipcMain.handle('login', async () => {
     // 先返回一个假数据
-    return 456789
+    const { code } = await autoLogin('login', null) as any
+    return code
   })
 }
 
-// 2、监听渲染进程的连接行为
-linstenFromRednerer()
-function linstenFromRednerer() {
-  ipcMain.on('control', (event, code) => {
+// 2、监听控制端发起的控制行为
+linstenToControl()
+function linstenToControl() {
+  ipcMain.on('control', async (event, code) => {
+    await sendDataToControl('control', { 'remote': code })
     controlSuccess(1, code)
   })
 }
 
-// 3、
+// 3、当控制成功时
 async function controlSuccess(type: number, name: number) {
   // 通知渲染进程控制成功了
   win?.webContents.send('controlStateChange', { type, name })
@@ -138,4 +142,12 @@ async function controlSuccess(type: number, name: number) {
       win = null
     });
   }
+}
+
+// 4、告知傀儡端，它被控制了
+tellPupeIsControled()
+async function tellPupeIsControled() {
+  const res: any = await listenToBeControl() // 开启监听
+  console.log('tellPupeIsControled', res)
+  win?.webContents.send('pupeIsControled', res.remote)
 }
