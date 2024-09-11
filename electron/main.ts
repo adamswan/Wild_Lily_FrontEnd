@@ -5,6 +5,7 @@ import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
 import './robotToControlUser.ts'
 import { autoLogin, sendDataToControl, listenToBeControl, forwardInfo } from './websocket.ts'
+import { NumOrStr } from './lily'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -37,6 +38,7 @@ function createWindow() {
     width: 410,
     height: 530,
     autoHideMenuBar: true,
+    resizable: false,
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
@@ -50,7 +52,7 @@ function createWindow() {
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
-    win.webContents.openDevTools() //自动打开控制台
+    // win.webContents.openDevTools() //自动打开控制台
   } else {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
@@ -66,8 +68,8 @@ function createWindow() {
 
 function createNEWWindow() {
   newWin = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1500,
+    height: 888,
     autoHideMenuBar: true,
     x: 0,
     y: 0,
@@ -133,7 +135,7 @@ async function controlSuccess(type: number, name: number) {
     //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
     newWin.loadURL('http://localhost:5173/new-win-controled.html');
 
-    newWin.webContents.openDevTools(); // 自动打开F12  
+    // newWin.webContents.openDevTools(); // 自动打开F12  
 
     // 监听窗口关闭事件  
     newWin.on('close', () => {
@@ -149,7 +151,6 @@ async function controlSuccess(type: number, name: number) {
 tellPupeIsControled()
 async function tellPupeIsControled() {
   const res: any = await listenToBeControl() // 开启监听
-  console.log('tellPupeIsControled', res)
   win?.webContents.send('pupeIsControled', res.remote)
 }
 
@@ -161,14 +162,12 @@ function listenForward() {
   })
 }
 
-export function sendControlWindow(channel: any, ...args: any) {
-  win?.webContents.send(channel, ...args)
-}
 // 小窗
-export function mainToRender(channel: any, data: any) {
+export function mainToRender(channel: string, data: string) {
   win?.webContents.send(channel, data)
 }
+
 // 大窗
-export function mainBigWinToRender(channel: any, data: any) {
+export function mainBigWinToRender(channel: string, data: string) {
   newWin?.webContents.send(channel, data)
 }

@@ -1,5 +1,5 @@
 import { ipcRenderer, contextBridge } from 'electron'
-import { listenToKey, listentoMouse, createAnswer, setRemote, addIceCandidateForControl, addIceCandidateForPupe } from './peer-control'
+import { listenToKey, listentoMouse } from './peer-control'
 
 // --------- Expose some API to the Renderer process ---------
 // 在这里向 window 上添加自定义的属性、方法
@@ -32,7 +32,6 @@ const myAPI = {
     let res = await ipcRenderer.invoke('login')
     return res
   },
-
   // 控制状态发生变化
   controlStateChange: () => {
     return new Promise((resolve) => {
@@ -41,43 +40,10 @@ const myAPI = {
       })
     })
   },
-
   // 渲染进程向主进程单向通信，告知主进程，控制开始
-  startControl: (code: any) => {
+  startControl: (code: string) => {
     ipcRenderer.send('control', code)
   },
-
-  createAnswer,
-
-  setRemote,
-
-  // listenAnswer: () => {
-  //     ipcRenderer.on('answer', (event, answer) => {
-  //       setRemote(answer)
-  //     })
-  // },
-
-  // sendOffer: (obj: any) => {
-  //   ipcRenderer.send('forward', 'offer', obj)
-  // },
-
-  // sendControlCandidate: (data: any) => {
-  //   ipcRenderer.send('forward', 'control-candidate', data)
-  // },
-
-  // sendPupeCandidate: (data: any) => {
-  //   ipcRenderer.send('forward', 'puppet-candidate', data)
-  // },
-
-  // listenControlCandidate: () => {
-  //   ipcRenderer.on('candidate', (event, candidate) => {
-  //     addIceCandidateForControl(candidate)
-  //   })
-  // },
-
-  addIceCandidateForControl,
-  addIceCandidateForPupe,
-
   pupeIsControled: (event: any, remote: number) => {
     return new Promise((resolve) => {
       ipcRenderer.on('pupeIsControled', (event, remote) => {
@@ -90,9 +56,6 @@ const myAPI = {
 contextBridge.exposeInMainWorld('myAPI', myAPI)
 
 if (document.getElementById('screen-video')) {
-  console.log('video存在')
   listenToKey() // 监听控制端键盘
   listentoMouse()// 监听控制端鼠标
-} else {
-  console.log('video不存在')
 }

@@ -1,11 +1,12 @@
 import { ipcMain } from "electron"
 import { createRequire } from 'node:module'
+import { Keyboard, MouseupData } from "./lily"
 const require = createRequire(import.meta.url)
 const robot = require('robotjs')
 const vkey = require('vkey')
 
 // 控制傀儡端的鼠标操作
-export const handleMouse = (data: any) => {
+export const handleMouse = (data: MouseupData) => {
     let { clientX, clientY, screen, video } = data
     // 根据比例关系,转换为在傀儡端桌面真实的鼠标坐标
     let x = clientX * screen.width / video.width
@@ -17,7 +18,7 @@ export const handleMouse = (data: any) => {
 }
 
 // 控制傀儡端的键盘操作
-export const handleKey = (data: any) => {
+export const handleKey = (data: Keyboard) => {
     // 处理组合键
     const modifiers = [] // 收集组合键
     if (data.meta) {

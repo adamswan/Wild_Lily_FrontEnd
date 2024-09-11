@@ -1,5 +1,6 @@
 {
-  "name": "remote-control-adams",
+  "name": "wild-lily-remote-control",
+  "author": "adams-wan",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,6 +12,7 @@
   "dependencies": {
     "@electron/rebuild": "^3.6.0",
     "@esbuild/win32-x64": "^0.23.1",
+    "@types/webrtc": "^0.0.43",
     "@types/ws": "^8.5.12",
     "bufferutil": "^4.0.8",
     "element-plus": "^2.8.2",

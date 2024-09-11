@@ -34,13 +34,10 @@ const getVideoStream = () => {
 const pc = new window.RTCPeerConnection({});
 const dataChannel = pc.createDataChannel("robotchannel", { reliable: false });
 dataChannel.onopen = () => {
-  console.log("dataChannel open");
   mitter2.on("mouseup", (obj) => {
-    console.log("打印obj", obj);
     dataChannel.send(JSON.stringify(obj));
   });
   mitter2.on("keydown", (obj) => {
-    console.log("打印obj鼠标", obj);
     dataChannel.send(JSON.stringify(obj));
   });
 };
@@ -58,18 +55,6 @@ pc.onicecandidate = function(e) {
     bFlag = false;
   }
 };
-let candidateForControl = [];
-async function addIceCandidateForControl(candidate) {
-  if (candidate) {
-    candidateForControl.push(candidate);
-  }
-  if (pc.remoteDescription && pc.remoteDescription.type) {
-    for (let i = 0; i < candidateForControl.length; i++) {
-      await pc.addIceCandidate(new RTCIceCandidate(candidateForControl[i]));
-    }
-    candidateForControl = [];
-  }
-}
 const createOffer = async () => {
   const offer = await pc.createOffer({
     offerToReceiveAudio: false,
@@ -100,13 +85,11 @@ pc2.ondatachannel = (e) => {
       };
       electron.ipcRenderer.send("autoOperateMouse", data);
     } else if (type === "keyboard") {
-      console.log("keyboard", data);
       electron.ipcRenderer.send("autoOperateKeyboard", data);
     }
   };
 };
 pc2.onicecandidate = function(e) {
-  console.log("candidate2", JSON.stringify(e.candidate));
   if (e.candidate) {
     electron.ipcRenderer.send("forward", "puppet-candidate", JSON.stringify(e.candidate));
   }
@@ -116,7 +99,6 @@ electron.ipcRenderer.on("set-addIce", (e, candidate) => {
   if (!video) {
     count++;
     if (count === 3) {
-      console.log("count", count);
       setTimeout(() => {
         addIceCandidateForPupe(JSON.parse(candidate));
       }, 1e3);
@@ -125,42 +107,31 @@ electron.ipcRenderer.on("set-addIce", (e, candidate) => {
 });
 let candidateForPupe = [];
 async function addIceCandidateForPupe(candidate) {
-  console.log("addIceCandidateForPupe----執行");
   if (candidate) {
-    console.log("进入for1");
     candidateForPupe.push(candidate);
   }
-  console.log("进入for2");
   for (let i = 0; i < candidateForPupe.length; i++) {
-    console.log("进入for3");
     await pc2.addIceCandidate(new RTCIceCandidate(candidateForPupe[i]));
   }
   candidateForPupe = [];
 }
 electron.ipcRenderer.on("gen-answer", async (e, offer) => {
   if (!document.getElementById("screen-video")) {
-    console.log("我是小窗口1", offer);
     let answer = await createAnswer(JSON.parse(offer));
-    console.log("我是小窗口2", JSON.stringify(answer));
     electron.ipcRenderer.send("send-answer", JSON.stringify(answer));
   }
 });
 async function createAnswer(offer) {
-  console.error("createAnswer---done");
   let screenStream = await getVideoStream();
   pc2.addStream(screenStream);
   await pc2.setRemoteDescription(offer);
   await pc2.setLocalDescription(await pc2.createAnswer());
-  console.log("answer", JSON.stringify(pc2.localDescription));
   return pc2.localDescription;
 }
-window.createAnswer = createAnswer;
 const setRemote = async (answer) => {
-  console.error("setRemote---done");
   await pc.setRemoteDescription(answer);
 };
 electron.ipcRenderer.on("set-remote", (event, answer) => {
-  console.log("set-remote---hhhh", answer);
   if (video) {
     setRemote(JSON.parse(answer));
   }
@@ -174,7 +145,6 @@ const listenToKey = () => {
       control: e.ctrlKey,
       alt: e.altKey
     };
-    console.log("data", data);
     mitter2.emit("keydown", {
       type: "keyboard",
       data
@@ -239,29 +209,6 @@ const myAPI = {
   startControl: (code) => {
     electron.ipcRenderer.send("control", code);
   },
-  createAnswer,
-  setRemote,
-  // listenAnswer: () => {
-  //     ipcRenderer.on('answer', (event, answer) => {
-  //       setRemote(answer)
-  //     })
-  // },
-  // sendOffer: (obj: any) => {
-  //   ipcRenderer.send('forward', 'offer', obj)
-  // },
-  // sendControlCandidate: (data: any) => {
-  //   ipcRenderer.send('forward', 'control-candidate', data)
-  // },
-  // sendPupeCandidate: (data: any) => {
-  //   ipcRenderer.send('forward', 'puppet-candidate', data)
-  // },
-  // listenControlCandidate: () => {
-  //   ipcRenderer.on('candidate', (event, candidate) => {
-  //     addIceCandidateForControl(candidate)
-  //   })
-  // },
-  addIceCandidateForControl,
-  addIceCandidateForPupe,
   pupeIsControled: (event, remote) => {
     return new Promise((resolve) => {
       electron.ipcRenderer.on("pupeIsControled", (event2, remote2) => {
@@ -272,9 +219,6 @@ const myAPI = {
 };
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
 if (document.getElementById("screen-video")) {
-  console.log("video存在");
   listenToKey();
   listentoMouse();
-} else {
-  console.log("video不存在");
 }

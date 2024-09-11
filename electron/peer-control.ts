@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron'
 import mitte from 'mitt'
+import { MouseupData } from './lily'
 
 const mitter2 = mitte() // 发布订阅
 
@@ -23,57 +24,43 @@ export const getVideoStream = () => {
 }
 
 // 1、创建控制端的 SDP 邀请
-const pc = new window.RTCPeerConnection({}) as any
+const pc: any = new window.RTCPeerConnection({})
 
 // 创建控制端的 RTCDataChannel
-const dataChannel = pc.createDataChannel('robotchannel', { reliable: false })
+const dataChannel: RTCDataChannel = pc.createDataChannel('robotchannel', { reliable: false })
 dataChannel.onopen = () => {// 监听数据通道打开
-    // 监听robot事件
-    console.log('dataChannel open')
     // 监听鼠标事件
     mitter2.on('mouseup', (obj) => {
         // 通过 dataChannel 发给傀儡端
-        console.log('打印obj', obj)
         dataChannel.send(JSON.stringify(obj))
     })
     // 监听键盘事件
     mitter2.on('keydown', (obj) => {
         // 通过 dataChannel 发给傀儡端
-        console.log('打印obj鼠标', obj)
         dataChannel.send(JSON.stringify(obj))
     })
 }
 
-dataChannel.onmessage = (event: any) => {
+dataChannel.onmessage = (event: MessageEvent<any>) => {
     console.log('dataChannel onmessage', event)
 }
-dataChannel.onerror = (event: any) => {
+dataChannel.onerror = (event: Event) => {
     console.log('dataChannel onerror', event)
 }
 
 // webRTC NAT穿透：ICE, 交互式连接创建
 let bFlag = true
-pc.onicecandidate = function (e: any) {
-    // if (e.candidate) {
-    //     ipcRenderer.send('forward', 'control-candidate', JSON.stringify(e.candidate))
-    // }
-    // console.log('candidate',video, JSON.stringify(e.candidate))
-
+pc.onicecandidate = function (e: RTCPeerConnectionIceEvent) {
     if (e.candidate && bFlag === true) {
         console.log('candidate', video, JSON.stringify(e.candidate))
         ipcRenderer.send('send-candidate-to-small-win', JSON.stringify(e.candidate))
         bFlag = false
     }
-
 }
 
-// ipcRenderer.on('candidate', (event, candidate) => {
-//     addIceCandidateForControl(candidate)
-// })
+let candidateForControl: RTCIceCandidateInit[] = []
 
-let candidateForControl: any = []
-
-export async function addIceCandidateForControl(candidate: any) {
+export async function addIceCandidateForControl(candidate: RTCIceCandidateInit) {
     if (candidate) {
         candidateForControl.push(candidate)
     }
@@ -96,11 +83,6 @@ const createOffer = async () => {
     return pc.localDescription
 }
 createOffer().then(async (offer) => {
-    // console.log('offer9999', JSON.stringify(offer))
-    // ipcRenderer.send('forward', 'offer', {
-    //     type: offer.type,
-    //     sdp: offer.sdp
-    // })
     if (video !== null) { // 大窗口
         ipcRenderer.send('pcOfferSendToWS', JSON.stringify(offer))
     }
@@ -131,36 +113,23 @@ pc2.ondatachannel = (e: any) => {
             }
             ipcRenderer.send('autoOperateMouse', data)
         } else if (type === 'keyboard') {
-            console.log('keyboard', data)
             ipcRenderer.send('autoOperateKeyboard', data)
         }
     }
 }
 
 pc2.onicecandidate = function (e: any) {// webRTC NAT穿透：ICE, 交互式连接创建
-    console.log('candidate2', JSON.stringify(e.candidate))
     if (e.candidate) {
-        // (window as any).myAPI.sendPupeCandidate(e.candidate)
         ipcRenderer.send('forward', 'puppet-candidate', JSON.stringify(e.candidate))
     }
 }
 
-// ipcRenderer.on('candidate', (event, candidate) => {
-//     addIceCandidateForPupe(candidate)
-// })
-
 let count = 0
-// let theCan = ''
-// console.log('theCan', theCan)
 ipcRenderer.on('set-addIce', (e, candidate) => {
     if (!video) { // 小窗
         count++
-        // theCan = candidate
-
         if (count === 3) {
-            console.log('count', count)
             setTimeout(() => {
-                // console.log('定时器的theCan', theCan)
                 addIceCandidateForPupe(JSON.parse(candidate))
             }, 1000)
         }
@@ -169,17 +138,12 @@ ipcRenderer.on('set-addIce', (e, candidate) => {
 })
 
 let candidateForPupe: any = []
-
 export async function addIceCandidateForPupe(candidate: any) {
-    console.log('addIceCandidateForPupe----執行')
     if (candidate) {
-        console.log('进入for1')
         candidateForPupe.push(candidate)
     }
     // if (pc2.remoteDescription && pc2.remoteDescription.type) {
-    console.log('进入for2')
     for (let i = 0; i < candidateForPupe.length; i++) {
-        console.log('进入for3')
         await pc2.addIceCandidate(new RTCIceCandidate(candidateForPupe[i]))
     }
     candidateForPupe = []
@@ -191,58 +155,32 @@ export async function addIceCandidateForPupe(candidate: any) {
 // 1) 将 SDP 设置为自己的 remote
 // 2) 也创建一个 RTCPeerConnection 连接，并将视频流放进去
 // 3）向控制端发送一个 SDP 应答
-
-// ipcRenderer.on('offer', async (e, offer) => {
-//     let answer = await createAnswer(offer)
-//     ipcRenderer.send('forward', 'answer', {
-//         type: answer.type,
-//         sdp: answer.sdp
-//     })
-// })
-
-
-ipcRenderer.on('gen-answer', async (e, offer: any) => {
+ipcRenderer.on('gen-answer', async (e, offer: string) => {
     if (!document.getElementById('screen-video')) {// 小窗
-        console.log('我是小窗口1', offer)
         let answer = await createAnswer(JSON.parse(offer))
-        console.log('我是小窗口2', JSON.stringify(answer))
         ipcRenderer.send('send-answer', JSON.stringify(answer))
     }
 })
 
 
-export async function createAnswer(offer: any) {
-    console.error('createAnswer---done')
+export async function createAnswer(offer: string) {
     let screenStream = await getVideoStream() // 获取视频流
     pc2.addStream(screenStream)
     await pc2.setRemoteDescription(offer)
     await pc2.setLocalDescription(await pc2.createAnswer())
-    console.log('answer', JSON.stringify(pc2.localDescription))
     return pc2.localDescription
 }
-(window as any).createAnswer = createAnswer
 
 
 // 将傀儡端响应的 SDP 应答设置为控制端的 remote
-export const setRemote = async (answer: any) => {
-    console.error('setRemote---done')
+export const setRemote = async (answer: string) => {
     await pc.setRemoteDescription(answer)
 }
 
-// (window as any).setRemote = setRemote
-
-// 监听 answer ，并设置为 Remote
-// ipcRenderer.on('answer', (event, answer) => {
-//     setRemote(answer)
-// })
-
-
 ipcRenderer.on('set-remote', (event, answer) => {
-    console.log('set-remote---hhhh', answer)
     if (video) {
         setRemote(JSON.parse(answer))
     }
-
 })
 
 // 监听控制端的键盘
@@ -255,7 +193,6 @@ export const listenToKey = () => {
             control: e.ctrlKey,
             alt: e.altKey
         }
-        console.log('data', data)
         // 抛出键盘事件
         mitter2.emit('keydown', {
             type: "keyboard",
@@ -267,7 +204,7 @@ export const listenToKey = () => {
 // 监听控制端的鼠标
 export const listentoMouse = () => {
     window.addEventListener('mouseup', (e) => {
-        let data: any = {}
+        let data: Partial<MouseupData> = {}
         data.clientX = e.clientX
         data.clientY = e.clientY
         data.video = { // 获取视频区域的真实宽高
@@ -285,7 +222,3 @@ export const listentoMouse = () => {
         })
     })
 }
-
-// (window as any).addIceCandidateForControl = addIceCandidateForControl
-
-// { (window as any).addIceCandidateForPupe = addIceCandidateForPupe }

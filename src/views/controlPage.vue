@@ -30,9 +30,6 @@ const ruleForm = reactive<RuleForm>({
     // 远程控制码
     remoteCode: ''
 })
-const setRemoteCode = () => {
-
-}
 
 // 本地控制码
 const localCode = ref<number>(88888)
@@ -71,7 +68,7 @@ const rules = reactive<FormRules<RuleForm>>({
 })
 
 // 开始控制
-const startControl = (code: any) => {
+const startControl = (code: number | string) => {
     // 触发预加载脚本的自定义函数
     (window as any).myAPI.startControl(code)
 }
@@ -80,7 +77,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
     if (!formEl) return
     await formEl.validate((valid, fields) => {
         if (valid) {
-            console.log('submit!')
             startControl(ruleForm.remoteCode)
         } else {
             console.log('error submit!', fields)
@@ -99,7 +95,6 @@ const wiredFun = () => {
     // 监听傀儡端被控制
     (window as any).myAPI.pupeIsControled()
         .then((remote: number) => {
-            console.log('.vue got remote code', remote)
             setControlText(`被${remote}远程控制中...`)
         })
 }

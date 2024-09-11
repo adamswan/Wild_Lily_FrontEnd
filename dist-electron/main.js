@@ -3363,7 +3363,6 @@ ws.on("message", (message) => {
   } catch (err) {
     console.log("err", err);
   }
-  console.log("paochu--emit", res.action);
   mitter.emit(res.action, res.data);
 });
 function sendDataWithJSON(type, oData) {
@@ -3379,7 +3378,6 @@ function autoLogin(type, oData) {
   return new Promise((resolve) => {
     sendDataWithJSON(type, oData);
     mitter.on("login-success", (data) => {
-      console.log("data--login-success", data);
       resolve(data);
     });
   });
@@ -3388,7 +3386,6 @@ function sendDataToControl(type, oData) {
   return new Promise((resolve) => {
     sendDataWithJSON(type, oData);
     mitter.on("control-success", (data) => {
-      console.log("control-success", data);
       resolve(data);
     });
   });
@@ -3396,7 +3393,6 @@ function sendDataToControl(type, oData) {
 function listenToBeControl() {
   return new Promise((resolve) => {
     mitter.on("controlled-by", (data) => {
-      console.log("controlled-by", data);
       resolve(data);
     });
   });
@@ -3405,7 +3401,6 @@ function forwardInfo(type, oData) {
   return new Promise((resolve) => {
     sendDataWithJSON(type, oData);
     mitter.on("forward", (data) => {
-      console.log("backkkkkkkk", data);
       resolve(data);
     });
   });
@@ -3419,12 +3414,10 @@ ipcMain.on("pcOfferSendToWS", (e, offer) => {
   };
   ws.send(JSON.stringify(oData));
   mitter.on("pcoffer-for-createAnswer", (data) => {
-    console.log("pcoffer-for-createAnswer", data.res);
     mainToRender("gen-answer", data.res);
   });
 });
 ipcMain.on("send-answer", (e, answer) => {
-  console.log("yingda", answer);
   let oData = {
     action: "answer",
     data: {
@@ -3433,22 +3426,18 @@ ipcMain.on("send-answer", (e, answer) => {
   };
   ws.send(JSON.stringify(oData));
   mitter.on("answer-for-set-remote", (data) => {
-    console.log("answer-for-set-remote", data.res);
     mainBigWinToRender("set-remote", data.res);
   });
 });
 ipcMain.on("send-candidate-to-small-win", (e, candidate) => {
-  console.log("got---candidate", candidate);
   let oData = {
     action: "candidate",
     data: {
       candidate
     }
   };
-  console.log("got---candidate++++oData", oData);
   ws.send(JSON.stringify(oData));
   mitter.on("for-pupe-addIce", (data) => {
-    console.log("for-pupe-addIce", data.res);
     mainToRender("set-addIce", data.res);
   });
 });
@@ -3466,6 +3455,7 @@ function createWindow() {
     width: 410,
     height: 530,
     autoHideMenuBar: true,
+    resizable: false,
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname$1, "preload.mjs")
@@ -3476,7 +3466,6 @@ function createWindow() {
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools();
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
@@ -3487,8 +3476,8 @@ function createWindow() {
 }
 function createNEWWindow() {
   newWin = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1500,
+    height: 888,
     autoHideMenuBar: true,
     x: 0,
     y: 0,
@@ -3533,7 +3522,6 @@ async function controlSuccess(type, name) {
     getDeskRealTimeVideoStream(desktopCapturer, session);
     //! 坑: loadFile 方法通常用于加载本地文件系统中的 HTML 文件，而不是从开发服务器（如 Vite 开发服务器）加载。如果你的 HTML 文件是通过 Vite 打包或服务的，你应该使用 loadURL 方法并指向 Vite 开发服务器的 URL
     newWin.loadURL("http://localhost:5173/new-win-controled.html");
-    newWin.webContents.openDevTools();
     newWin.on("close", () => {
       win == null ? void 0 : win.close();
       app.quit();
@@ -3544,7 +3532,6 @@ async function controlSuccess(type, name) {
 tellPupeIsControled();
 async function tellPupeIsControled() {
   const res = await listenToBeControl();
-  console.log("tellPupeIsControled", res);
   win == null ? void 0 : win.webContents.send("pupeIsControled", res.remote);
 }
 listenForward();
@@ -3552,9 +3539,6 @@ function listenForward() {
   ipcMain.on("forward", (e, type, oData) => {
     forwardInfo(type, oData);
   });
-}
-function sendControlWindow(channel, ...args) {
-  win == null ? void 0 : win.webContents.send(channel, ...args);
 }
 function mainToRender(channel, data) {
   win == null ? void 0 : win.webContents.send(channel, data);
@@ -3567,6 +3551,5 @@ export {
   RENDERER_DIST,
   VITE_DEV_SERVER_URL,
   mainBigWinToRender,
-  mainToRender,
-  sendControlWindow
+  mainToRender
 };
