@@ -48,7 +48,33 @@ const myAPI = {
   },
 
   createAnswer,
+
   setRemote,
+
+  // listenAnswer: () => {
+  //     ipcRenderer.on('answer', (event, answer) => {
+  //       setRemote(answer)
+  //     })
+  // },
+
+  // sendOffer: (obj: any) => {
+  //   ipcRenderer.send('forward', 'offer', obj)
+  // },
+
+  // sendControlCandidate: (data: any) => {
+  //   ipcRenderer.send('forward', 'control-candidate', data)
+  // },
+
+  // sendPupeCandidate: (data: any) => {
+  //   ipcRenderer.send('forward', 'puppet-candidate', data)
+  // },
+
+  // listenControlCandidate: () => {
+  //   ipcRenderer.on('candidate', (event, candidate) => {
+  //     addIceCandidateForControl(candidate)
+  //   })
+  // },
+
   addIceCandidateForControl,
   addIceCandidateForPupe,
 
@@ -64,6 +90,7 @@ const myAPI = {
 contextBridge.exposeInMainWorld('myAPI', myAPI)
 
 if (document.getElementById('screen-video')) {
+  console.log('video存在')
   listenToKey() // 监听控制端键盘
   listentoMouse()// 监听控制端鼠标
 } else {

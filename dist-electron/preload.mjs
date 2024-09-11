@@ -16,8 +16,13 @@ const getVideoStream = () => {
 };
 const pc = new window.RTCPeerConnection({});
 //! webRTC NAT穿透：ICE, 交互式连接创建
+let bFlag = true;
 pc.onicecandidate = function(e) {
-  console.log("candidate", JSON.stringify(e.candidate));
+  if (e.candidate && bFlag === true) {
+    console.log("candidate", video, JSON.stringify(e.candidate));
+    electron.ipcRenderer.send("send-candidate-to-small-win", JSON.stringify(e.candidate));
+    bFlag = false;
+  }
 };
 let candidateForControl = [];
 async function addIceCandidateForControl(candidate) {
@@ -40,7 +45,11 @@ const createOffer = async () => {
   console.log("pc offer", JSON.stringify(offer));
   return pc.localDescription;
 };
-createOffer();
+createOffer().then(async (offer) => {
+  if (video !== null) {
+    electron.ipcRenderer.send("pcOfferSendToWS", JSON.stringify(offer));
+  }
+});
 pc.onaddstream = (e) => {
   console.log("add-stream", e.stream);
   video.srcObject = e.stream;
@@ -50,20 +59,46 @@ const pc2 = new window.RTCPeerConnection({});
 //! webRTC NAT穿透：ICE, 交互式连接创建
 pc2.onicecandidate = function(e) {
   console.log("candidate2", JSON.stringify(e.candidate));
+  if (e.candidate) {
+    electron.ipcRenderer.send("forward", "puppet-candidate", JSON.stringify(e.candidate));
+  }
 };
+let count = 0;
+electron.ipcRenderer.on("set-addIce", (e, candidate) => {
+  if (!video) {
+    count++;
+    if (count === 3) {
+      console.log("count", count);
+      setTimeout(() => {
+        addIceCandidateForPupe(JSON.parse(candidate));
+      }, 1e3);
+    }
+  }
+});
 let candidateForPupe = [];
 async function addIceCandidateForPupe(candidate) {
+  console.log("addIceCandidateForPupe----執行");
   if (candidate) {
+    console.log("进入for1");
     candidateForPupe.push(candidate);
   }
-  if (pc2.remoteDescription && pc2.remoteDescription.type) {
-    for (let i = 0; i < candidateForPupe.length; i++) {
-      await pc2.addIceCandidate(new RTCIceCandidate(candidateForPupe[i]));
-    }
-    candidateForPupe = [];
+  console.log("进入for2");
+  for (let i = 0; i < candidateForPupe.length; i++) {
+    console.log("进入for3");
+    await pc2.addIceCandidate(new RTCIceCandidate(candidateForPupe[i]));
   }
+  candidateForPupe = [];
 }
+electron.ipcRenderer.on("gen-answer", async (e, offer) => {
+  if (!document.getElementById("screen-video")) {
+    console.log("我是小窗口1", offer);
+    let answer = await createAnswer(JSON.parse(offer));
+    console.log("我是小窗口2", JSON.stringify(answer));
+    electron.ipcRenderer.send("send-answer", JSON.stringify(answer));
+  }
+});
 async function createAnswer(offer) {
+  console.error("createAnswer---done");
   let screenStream = await getVideoStream();
   pc2.addStream(screenStream);
   await pc2.setRemoteDescription(offer);
@@ -73,9 +108,15 @@ async function createAnswer(offer) {
 }
 window.createAnswer = createAnswer;
 const setRemote = async (answer) => {
+  console.error("setRemote---done");
   await pc.setRemoteDescription(answer);
 };
-window.setRemote = setRemote;
+electron.ipcRenderer.on("set-remote", (event, answer) => {
+  console.log("set-remote---hhhh", answer);
+  if (video) {
+    setRemote(JSON.parse(answer));
+  }
+});
 const listenToKey = () => {
   window.addEventListener("keydown", (e) => {
     let data = {
@@ -145,6 +186,25 @@ const myAPI = {
   },
   createAnswer,
   setRemote,
+  // listenAnswer: () => {
+  //     ipcRenderer.on('answer', (event, answer) => {
+  //       setRemote(answer)
+  //     })
+  // },
+  // sendOffer: (obj: any) => {
+  //   ipcRenderer.send('forward', 'offer', obj)
+  // },
+  // sendControlCandidate: (data: any) => {
+  //   ipcRenderer.send('forward', 'control-candidate', data)
+  // },
+  // sendPupeCandidate: (data: any) => {
+  //   ipcRenderer.send('forward', 'puppet-candidate', data)
+  // },
+  // listenControlCandidate: () => {
+  //   ipcRenderer.on('candidate', (event, candidate) => {
+  //     addIceCandidateForControl(candidate)
+  //   })
+  // },
   addIceCandidateForControl,
   addIceCandidateForPupe,
   pupeIsControled: (event, remote) => {
@@ -157,6 +217,7 @@ const myAPI = {
 };
 electron.contextBridge.exposeInMainWorld("myAPI", myAPI);
 if (document.getElementById("screen-video")) {
+  console.log("video存在");
   listenToKey();
   listentoMouse();
 } else {

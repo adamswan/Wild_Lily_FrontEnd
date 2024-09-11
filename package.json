@@ -24,6 +24,7 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/electron": "^1.6.10",
     "@vitejs/plugin-vue": "^5.0.4",
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",

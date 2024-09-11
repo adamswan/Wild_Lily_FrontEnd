@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session, desktopCapturer } from "electron";
+import { ipcMain, app, BrowserWindow, session, desktopCapturer } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -3327,6 +3327,7 @@ ws.on("message", (message) => {
   } catch (err) {
     console.log("err", err);
   }
+  console.log("paochu--emit", res.action);
   mitter.emit(res.action, res.data);
 });
 function sendDataWithJSON(type, oData) {
@@ -3335,6 +3336,9 @@ function sendDataWithJSON(type, oData) {
   };
   if (oData !== null) {
     sendData.data = oData;
+  }
+  if (type === "forward") {
+    console.log("seeeeeeeeeeeeeeeeeeeeeeeeeeeeee", type, oData);
   }
   ws.send(JSON.stringify(sendData));
 }
@@ -3364,6 +3368,57 @@ function listenToBeControl() {
     });
   });
 }
+function forwardInfo(type, oData) {
+  return new Promise((resolve) => {
+    sendDataWithJSON(type, oData);
+    mitter.on("forward", (data) => {
+      console.log("backkkkkkkk", data);
+      resolve(data);
+    });
+  });
+}
+ipcMain.on("pcOfferSendToWS", (e, offer) => {
+  let oData = {
+    action: "pcoffer",
+    data: {
+      pcoffer: offer
+    }
+  };
+  ws.send(JSON.stringify(oData));
+  mitter.on("pcoffer-for-createAnswer", (data) => {
+    console.log("pcoffer-for-createAnswer", data.res);
+    mainToRender("gen-answer", data.res);
+  });
+});
+ipcMain.on("send-answer", (e, answer) => {
+  console.log("yingda", answer);
+  let oData = {
+    action: "answer",
+    data: {
+      answer
+    }
+  };
+  ws.send(JSON.stringify(oData));
+  mitter.on("answer-for-set-remote", (data) => {
+    console.log("answer-for-set-remote", data.res);
+    mainBigWinToRender("set-remote", data.res);
+  });
+});
+ipcMain.on("send-candidate-to-small-win", (e, candidate) => {
+  console.log("got---candidate", candidate);
+  let oData = {
+    action: "candidate",
+    data: {
+      candidate
+    }
+  };
+  console.log("got---candidate++++oData", oData);
+  ws.send(JSON.stringify(oData));
+  mitter.on("for-pupe-addIce", (data) => {
+    console.log("for-pupe-addIce", data.res);
+    mainToRender("set-addIce", data.res);
+  });
+});
 createRequire(import.meta.url);
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
@@ -3455,8 +3510,26 @@ async function tellPupeIsControled() {
   console.log("tellPupeIsControled", res);
   win == null ? void 0 : win.webContents.send("pupeIsControled", res.remote);
 }
+listenForward();
+function listenForward() {
+  ipcMain.on("forward", (e, type, oData) => {
+    forwardInfo(type, oData);
+  });
+}
+function sendControlWindow(channel, ...args) {
+  win == null ? void 0 : win.webContents.send(channel, ...args);
+}
+function mainToRender(channel, data) {
+  win == null ? void 0 : win.webContents.send(channel, data);
+}
+function mainBigWinToRender(channel, data) {
+  newWin == null ? void 0 : newWin.webContents.send(channel, data);
+}
 export {
   MAIN_DIST,
   RENDERER_DIST,
-  VITE_DEV_SERVER_URL
+  VITE_DEV_SERVER_URL,
+  mainBigWinToRender,
+  mainToRender,
+  sendControlWindow
 };

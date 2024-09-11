@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
 // import { listenOprateAndToControl, handleNet } from './robotToControlUser.ts'
-import { autoLogin, sendDataToControl, listenToBeControl } from './websocket.ts'
+import { autoLogin, sendDataToControl, listenToBeControl, forwardInfo } from './websocket.ts'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -150,4 +150,24 @@ async function tellPupeIsControled() {
   const res: any = await listenToBeControl() // 开启监听
   console.log('tellPupeIsControled', res)
   win?.webContents.send('pupeIsControled', res.remote)
+}
+
+// 5、监听转发事件
+listenForward()
+function listenForward() {
+  ipcMain.on('forward', (e, type, oData) => {
+    forwardInfo(type, oData)
+  })
+}
+
+export function sendControlWindow(channel: any, ...args: any) {
+  win?.webContents.send(channel, ...args)
+}
+// 小窗
+export function mainToRender(channel: any, data: any) {
+  win?.webContents.send(channel, data)
+}
+// 大窗
+export function mainBigWinToRender(channel: any, data: any) {
+  newWin?.webContents.send(channel, data)
 }
