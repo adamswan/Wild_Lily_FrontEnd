@@ -3,13 +3,11 @@ import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { getDeskRealTimeVideoStream } from './getRealTime.ts'
-// import { listenOprateAndToControl, handleNet } from './robotToControlUser.ts'
+import './robotToControlUser.ts'
 import { autoLogin, sendDataToControl, listenToBeControl, forwardInfo } from './websocket.ts'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// const mitt  = require('./websocket.ts')
-// console.log('mitt', mitt)
 
 // The built directory structure
 //
@@ -57,6 +55,13 @@ function createWindow() {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
+
+  // 监听窗口关闭事件  
+  win.on('close', () => {
+    // 初始窗口也一并关闭
+    newWin?.close()
+    app.quit()
+  });
 }
 
 function createNEWWindow() {
@@ -129,10 +134,6 @@ async function controlSuccess(type: number, name: number) {
     newWin.loadURL('http://localhost:5173/new-win-controled.html');
 
     newWin.webContents.openDevTools(); // 自动打开F12  
-
-    // 监听控制端的键鼠, 进而触发傀儡端的键鼠操作
-    // listenOprateAndToControl()
-    // handleNet()
 
     // 监听窗口关闭事件  
     newWin.on('close', () => {

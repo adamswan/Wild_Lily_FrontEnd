@@ -51,10 +51,6 @@ export function sendDataWithJSON(type: string, oData: object | null) {
     if (oData !== null) {
         sendData.data = oData
     }
-    if (type === 'forward') {
-        console.log('seeeeeeeeeeeeeeeeeeeeeeeeeeeeee', type, oData)
-    }
-
     ws.send(JSON.stringify(sendData))
 }
 

@@ -1,4 +1,7 @@
 import { ipcRenderer } from 'electron'
+import mitte from 'mitt'
+
+const mitter2 = mitte() // 发布订阅
 
 const video: HTMLVideoElement = document.getElementById('screen-video') as HTMLVideoElement
 
@@ -21,7 +24,34 @@ export const getVideoStream = () => {
 
 // 1、创建控制端的 SDP 邀请
 const pc = new window.RTCPeerConnection({}) as any
-//! webRTC NAT穿透：ICE, 交互式连接创建
+
+// 创建控制端的 RTCDataChannel
+const dataChannel = pc.createDataChannel('robotchannel', { reliable: false })
+dataChannel.onopen = () => {// 监听数据通道打开
+    // 监听robot事件
+    console.log('dataChannel open')
+    // 监听鼠标事件
+    mitter2.on('mouseup', (obj) => {
+        // 通过 dataChannel 发给傀儡端
+        console.log('打印obj', obj)
+        dataChannel.send(JSON.stringify(obj))
+    })
+    // 监听键盘事件
+    mitter2.on('keydown', (obj) => {
+        // 通过 dataChannel 发给傀儡端
+        console.log('打印obj鼠标', obj)
+        dataChannel.send(JSON.stringify(obj))
+    })
+}
+
+dataChannel.onmessage = (event: any) => {
+    console.log('dataChannel onmessage', event)
+}
+dataChannel.onerror = (event: any) => {
+    console.log('dataChannel onerror', event)
+}
+
+// webRTC NAT穿透：ICE, 交互式连接创建
 let bFlag = true
 pc.onicecandidate = function (e: any) {
     // if (e.candidate) {
@@ -40,8 +70,6 @@ pc.onicecandidate = function (e: any) {
 // ipcRenderer.on('candidate', (event, candidate) => {
 //     addIceCandidateForControl(candidate)
 // })
-
-
 
 let candidateForControl: any = []
 
@@ -89,10 +117,27 @@ pc.onaddstream = (e: any) => {
 }
 
 
+// 傀儡端
 const pc2: any = new window.RTCPeerConnection({})
+// 监听通道
+pc2.ondatachannel = (e: any) => {
+    // 监听datachannel消息
+    e.channel.onmessage = (event: any) => {
+        let { type, widthAndHeight, data } = JSON.parse(event.data)
+        if (type === 'mouse') { // 将数据传给robotjs, 让它自动控制鼠标
+            data.screen = {
+                width: widthAndHeight.windowWidth,
+                height: widthAndHeight.windowHeight
+            }
+            ipcRenderer.send('autoOperateMouse', data)
+        } else if (type === 'keyboard') {
+            console.log('keyboard', data)
+            ipcRenderer.send('autoOperateKeyboard', data)
+        }
+    }
+}
 
-//! webRTC NAT穿透：ICE, 交互式连接创建
-pc2.onicecandidate = function (e: any) {
+pc2.onicecandidate = function (e: any) {// webRTC NAT穿透：ICE, 交互式连接创建
     console.log('candidate2', JSON.stringify(e.candidate))
     if (e.candidate) {
         // (window as any).myAPI.sendPupeCandidate(e.candidate)
@@ -113,7 +158,7 @@ ipcRenderer.on('set-addIce', (e, candidate) => {
         // theCan = candidate
 
         if (count === 3) {
-            console.log('count',  count)
+            console.log('count', count)
             setTimeout(() => {
                 // console.log('定时器的theCan', theCan)
                 addIceCandidateForPupe(JSON.parse(candidate))
@@ -211,8 +256,11 @@ export const listenToKey = () => {
             alt: e.altKey
         }
         console.log('data', data)
-        // 将data传出去
-        ipcRenderer.send('inputKeyboardToNet', data)
+        // 抛出键盘事件
+        mitter2.emit('keydown', {
+            type: "keyboard",
+            data
+        })
     })
 }
 
@@ -226,11 +274,15 @@ export const listentoMouse = () => {
             width: video.getBoundingClientRect().width,
             height: video.getBoundingClientRect().height
         }
-        // 将data传出去
-        ipcRenderer.send('inputMouseToNet', {
-            windowWidth: window.screen.width,
-            windowHeight: window.screen.height
-        }, data)
+        // 抛出鼠标事件
+        mitter2.emit('mouseup', {
+            type: 'mouse',
+            widthAndHeight: {
+                windowWidth: window.screen.width,
+                windowHeight: window.screen.height
+            },
+            data
+        })
     })
 }
 

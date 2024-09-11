@@ -18,7 +18,6 @@ export const handleMouse = (data: any) => {
 
 // 控制傀儡端的键盘操作
 export const handleKey = (data: any) => {
-    console.log(333)
     // 处理组合键
     const modifiers = [] // 收集组合键
     if (data.meta) {
@@ -33,47 +32,20 @@ export const handleKey = (data: any) => {
     if (data.ctrl) {
         modifiers.push('ctrl')
     }
-
+    // 转换为真实按键名
     let key = vkey[data.keyCode].toLowerCase()
-    console.log('print key', key)
     if (key[0] !== '<') { // 过滤 <shift> 键
         // 按下按键
         robot.keyTap(key, modifiers)
     }
 }
 
-export const listenOprateAndToControl = () => {
-    // 主进程监听控制端的键盘, 进而触发傀儡端的键盘操作
-    ipcMain.on('inputKeyboard', (e, data) => {
-        console.log('keyboard', data)
-        handleKey(data)
-    })
+ipcMain.on('autoOperateMouse', (e, data) => {
+    handleMouse(data)
+})
 
-    // 主进程监听控制端的鼠标, 进而触发傀儡端的鼠标操作
-    ipcMain.on('inputMouse', (e, data) => {
-        // 添加控制端的点击坐标
-        data.screen = {
-            width: window.screen.width,
-            height: window.screen.height
-        }
-        handleMouse(data)
-    })
-}
-
-export const handleNet = () => {
-    // 暂时注释
-    ipcMain.on('inputKeyboardToNet', (e, data) => {
-        console.log(2222)
-        handleKey(data)
-    })
-
-    ipcMain.on('inputMouseToNet', (e, obj, data) => {
-        data.screen = {
-            width: obj.windowWidth,
-            height: obj.windowHeight
-        }
-        handleMouse(data)
-    })
-}
-
+ipcMain.on('autoOperateKeyboard', (e, data) => {
+    console.log('autoOperateKeyboard', data)
+    handleKey(data)
+})
 

@@ -22,6 +22,42 @@ const getDeskRealTimeVideoStream = (desktopCapturer2, session2) => {
     });
   });
 };
+const require2 = createRequire(import.meta.url);
+const robot = require2("robotjs");
+const vkey = require2("vkey");
+const handleMouse = (data) => {
+  let { clientX, clientY, screen, video } = data;
+  let x = clientX * screen.width / video.width;
+  let y = clientY * screen.height / video.height;
+  robot.moveMouse(x, y);
+  robot.mouseClick();
+};
+const handleKey = (data) => {
+  const modifiers = [];
+  if (data.meta) {
+    modifiers.push("meta");
+  }
+  if (data.shift) {
+    modifiers.push("shift");
+  }
+  if (data.alt) {
+    modifiers.push("alt");
+  }
+  if (data.ctrl) {
+    modifiers.push("ctrl");
+  }
+  let key = vkey[data.keyCode].toLowerCase();
+  if (key[0] !== "<") {
+    robot.keyTap(key, modifiers);
+  }
+};
+ipcMain.on("autoOperateMouse", (e, data) => {
+  handleMouse(data);
+});
+ipcMain.on("autoOperateKeyboard", (e, data) => {
+  console.log("autoOperateKeyboard", data);
+  handleKey(data);
+});
 function getDefaultExportFromCjs(x) {
   return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
 }
@@ -3337,9 +3373,6 @@ function sendDataWithJSON(type, oData) {
   if (oData !== null) {
     sendData.data = oData;
   }
-  if (type === "forward") {
-    console.log("seeeeeeeeeeeeeeeeeeeeeeeeeeeeee", type, oData);
-  }
   ws.send(JSON.stringify(sendData));
 }
 function autoLogin(type, oData) {
@@ -3447,6 +3480,10 @@ function createWindow() {
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
+  win.on("close", () => {
+    newWin == null ? void 0 : newWin.close();
+    app.quit();
+  });
 }
 function createNEWWindow() {
   newWin = new BrowserWindow({

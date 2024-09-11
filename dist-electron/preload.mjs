@@ -1,5 +1,22 @@
 "use strict";
 const electron = require("electron");
+function mitte(n) {
+  return { all: n = n || /* @__PURE__ */ new Map(), on: function(t, e) {
+    var i = n.get(t);
+    i ? i.push(e) : n.set(t, [e]);
+  }, off: function(t, e) {
+    var i = n.get(t);
+    i && (e ? i.splice(i.indexOf(e) >>> 0, 1) : n.set(t, []));
+  }, emit: function(t, e) {
+    var i = n.get(t);
+    i && i.slice().map(function(n2) {
+      n2(e);
+    }), (i = n.get("*")) && i.slice().map(function(n2) {
+      n2(t, e);
+    });
+  } };
+}
+const mitter2 = mitte();
 const video = document.getElementById("screen-video");
 const getVideoStream = () => {
   return new Promise((resolve) => {
@@ -15,7 +32,24 @@ const getVideoStream = () => {
   });
 };
 const pc = new window.RTCPeerConnection({});
-//! webRTC NAT穿透：ICE, 交互式连接创建
+const dataChannel = pc.createDataChannel("robotchannel", { reliable: false });
+dataChannel.onopen = () => {
+  console.log("dataChannel open");
+  mitter2.on("mouseup", (obj) => {
+    console.log("打印obj", obj);
+    dataChannel.send(JSON.stringify(obj));
+  });
+  mitter2.on("keydown", (obj) => {
+    console.log("打印obj鼠标", obj);
+    dataChannel.send(JSON.stringify(obj));
+  });
+};
+dataChannel.onmessage = (event) => {
+  console.log("dataChannel onmessage", event);
+};
+dataChannel.onerror = (event) => {
+  console.log("dataChannel onerror", event);
+};
 let bFlag = true;
 pc.onicecandidate = function(e) {
   if (e.candidate && bFlag === true) {
@@ -56,7 +90,21 @@ pc.onaddstream = (e) => {
   video.onloadedmetadata = (e2) => video.play();
 };
 const pc2 = new window.RTCPeerConnection({});
-//! webRTC NAT穿透：ICE, 交互式连接创建
+pc2.ondatachannel = (e) => {
+  e.channel.onmessage = (event) => {
+    let { type, widthAndHeight, data } = JSON.parse(event.data);
+    if (type === "mouse") {
+      data.screen = {
+        width: widthAndHeight.windowWidth,
+        height: widthAndHeight.windowHeight
+      };
+      electron.ipcRenderer.send("autoOperateMouse", data);
+    } else if (type === "keyboard") {
+      console.log("keyboard", data);
+      electron.ipcRenderer.send("autoOperateKeyboard", data);
+    }
+  };
+};
 pc2.onicecandidate = function(e) {
   console.log("candidate2", JSON.stringify(e.candidate));
   if (e.candidate) {
@@ -127,7 +175,10 @@ const listenToKey = () => {
       alt: e.altKey
     };
     console.log("data", data);
-    electron.ipcRenderer.send("inputKeyboardToNet", data);
+    mitter2.emit("keydown", {
+      type: "keyboard",
+      data
+    });
   });
 };
 const listentoMouse = () => {
@@ -140,10 +191,14 @@ const listentoMouse = () => {
       width: video.getBoundingClientRect().width,
       height: video.getBoundingClientRect().height
     };
-    electron.ipcRenderer.send("inputMouseToNet", {
-      windowWidth: window.screen.width,
-      windowHeight: window.screen.height
-    }, data);
+    mitter2.emit("mouseup", {
+      type: "mouse",
+      widthAndHeight: {
+        windowWidth: window.screen.width,
+        windowHeight: window.screen.height
+      },
+      data
+    });
   });
 };
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
