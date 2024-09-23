@@ -1,6 +1,8 @@
 # 项目介绍
 【野百合远程控制】是我的第 2 个全栈项目，这是前端部分。基于 Electron 从 0 到 1 实现了一个 PC 桌面端远程控制软件。后端部分采用 Nodejs 实现的 websocket 服务，以简单支撑前端的业务。
 
+掘金文章地址：https://juejin.cn/post/7413356439474995215
+
 # 技术栈
 Electron、Vue3、Vite、TypeScript、Element Plus、Robotjs、Mitt、Electron-Vite CLI 等
 
